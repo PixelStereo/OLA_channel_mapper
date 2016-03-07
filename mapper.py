@@ -42,60 +42,6 @@ global_flag_got_universes = False
 # functions
 
 
-def DmxSent(state):
-    """react on ola state."""
-    if not state.Succeeded():
-        wrapper.Stop()
-        print("warning: dmxSent does not Succeeded.")
-
-
-def SendDMXFrame():
-    """send one dmx frame (on multiple universes)."""
-    global frame_count
-    if (frame_count == -1) or (frame_count > 0):
-        if not frame_count == -1:
-            frame_count = frame_count - 1
-
-        # schdule a function call in 100ms
-        # we do this first in case the frame computation takes a long time.
-        wrapper.AddEvent(TICK_INTERVAL, SendDMXFrame)
-
-        # compute frame here
-        data = array.array('B')
-        global pixel_count
-        global strobe_state
-
-        for index_pixel in range(1, pixel_count+1):
-            if strobe_state:
-                data.append(255)
-                data.append(0)
-                data.append(255)
-            else:
-                data.append(0)
-                data.append(255)
-                data.append(0)
-        try:
-            if universe == -1:
-                # send to universe list
-                for uni in global_universe_list:
-                    wrapper.Client().SendDmx(uni, data, DmxSent)
-            else:
-                # send
-                wrapper.Client().SendDmx(universe, data, DmxSent)
-        except OLADNotRunningException:
-            wrapper.Stop()
-            print("olad not running anymore.")
-
-        # invert
-        if strobe_state:
-            strobe_state = False
-        else:
-            strobe_state = True
-    elif frame_count == 0:
-        wrapper.Stop()
-        print("all frames send.")
-
-
 def get_unused_universes(state, universe_list):
     """fill global_universe_list with unused universes."""
     print("fill_universe_list:")
@@ -132,9 +78,28 @@ class OLAThread(threading.Thread):
         self.wrapper = None
         self.client = None
 
-    def run(self):
-        """run thread and connect to ola."""
+    def start(self):
+        """connect to ola and run thread."""
         self.connect()
+        self.run()
+
+    def run(self):
+        """run thread."""
+        if self.flag_connected:
+            print("run ola wrapper.")
+            try:
+                self.wrapper.Run()
+            except KeyboardInterrupt:
+                self.wrapper.Stop()
+                print("\nstopped")
+            except socket.error as error:
+                print("connection to OLAD lost:")
+                print("   error: " + error.__str__())
+                self.flag_connected = False
+            # except Exception as error:
+            #     print(error)
+        else:
+            print("\nnot connected.")
 
     def connect(self):
         """connect to ola."""
@@ -151,23 +116,9 @@ class OLAThread(threading.Thread):
                 self.flag_connected = True
 
         if self.flag_connected:
-
             self.flag_wait_for_ola = False
             print("get client")
             self.client = self.wrapper.Client()
-
-            print("run ola wrapper.")
-            try:
-                self.wrapper.Run()
-            except KeyboardInterrupt:
-                self.wrapper.Stop()
-                print("\nstopped")
-            except socket.error as error:
-                print("connection to OLAD lost:")
-                print("   error: " + error.__str__())
-                self.flag_connected = False
-            # except Exception as error:
-            #     print(error)
         else:
             print("\nstopped waiting for olad.")
 
@@ -189,15 +140,9 @@ class Mapper(OLAThread):
         super(OLAThread, self).__init__()
 
         self.config = config
+        # print("config: {}".format(self.config))
 
-        # register callback on received dmx data
-        # self.client.RegisterUniverse(
-        #     config.universe.input,
-        #     client.REGISTER,
-        #     dmx_receive_frame
-        # )
-
-        self.universe = universe
+        self.universe = self.config['universe']['output']
         self.channel_count = 512
         self.channels = {
             'in': array.array('B'),
@@ -208,36 +153,56 @@ class Mapper(OLAThread):
         # for channel_index in range(0, self.channel_count):
         #     self.channels.append(0)
 
-    def map_channels(self):
+    def start(self):
+        """connect to ola and run thread."""
+        self.connect()
+        self.client.RegisterUniverse(
+            self.config['universe']['input'],
+            self.client.REGISTER,
+            self.dmx_receive_frame
+        )
+        self.run()
+
+    def map_channels(self, data_input):
         """remap channels according to map tabel."""
-        # temp_array = array.array('B')
-        # for channel_index in range(0, self.channel_count):
-        #     temp_array.append(self.channels[channel_index])
-        # dmx_send_frame()
-        pass
+        print("map channels:")
+        print("data_input: {}".format(data_input))
+        data_input_length = data_input.buffer_info()[1]
+        print("data_input_length: {}".format(data_input_length))
+        print("map: {}".format(self.config['map']))
+
+        data_output = array.array('B')
+
+        for channel_index in range(0, data_input_length):
+            data_output.append(data_input[channel_index])
+
+        self.dmx_send_frame(
+            self.config['universe']['output'],
+            data_output
+        )
 
     def dmx_receive_frame(self, data):
         """receive one dmx frame."""
-        print(data)
-        # self.map_channels(data)
+        # print(data)
+        self.map_channels(data)
         # temp_array = array.array('B')
         # for channel_index in range(0, self.channel_count):
         #     temp_array.append(self.channels[channel_index])
 
-    def dmx_send_frame(self):
+    def dmx_send_frame(self, universe, data):
         """send data as one dmx frame."""
         if self.flag_connected:
             try:
-                temp_array = array.array('B')
-                for channel_index in range(0, self.channel_count):
-                    temp_array.append(self.channels[channel_index])
+                # temp_array = array.array('B')
+                # for channel_index in range(0, self.channel_count):
+                #     temp_array.append(self.channels[channel_index])
 
                 # print("temp_array:{}".format(temp_array))
                 # print("send frame..")
                 self.wrapper.Client().SendDmx(
-                    self.universe.out,
-                    # self.channels,
-                    temp_array,
+                    universe,
+                    data,
+                    # temp_array,
                     self.dmx_send_callback
                 )
                 # print("done.")
@@ -262,12 +227,12 @@ class MapConfig():
 
     default_config = {
         'universe': {
-            'input': 0,
-            'out': 1,
+            'input': 1,
+            'output': 2,
         },
         'map': {
             'channels': [],
-            'repeate': False,
+            'repeat': False,
         },
     }
 
