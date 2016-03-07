@@ -1,0 +1,10 @@
+{
+    "map": {
+        "channels": [],
+        "repeate": false
+    },
+    "universe": {
+        "input": 0,
+        "out": 1
+    }
+}

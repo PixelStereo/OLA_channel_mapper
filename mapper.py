@@ -16,8 +16,10 @@ ola channel mapper.
 
 
 import sys
+import os
 import time
-import ConfigParser
+import json
+import threading
 import array
 import socket
 from ola.ClientWrapper import ClientWrapper
@@ -189,11 +191,11 @@ class Mapper(OLAThread):
         self.config = config
 
         # register callback on received dmx data
-        self.client.RegisterUniverse(
-            config.universe.,
-            client.REGISTER,
-            dmx_receive_frame
-        )
+        # self.client.RegisterUniverse(
+        #     config.universe.input,
+        #     client.REGISTER,
+        #     dmx_receive_frame
+        # )
 
         self.universe = universe
         self.channel_count = 512
@@ -258,10 +260,10 @@ class Mapper(OLAThread):
 class MapConfig():
     """abstract the reading / writing of configuration parameters."""
 
-    self.default_config = {
+    default_config = {
         'universe': {
-            'in': 0,
-            'out': 0,
+            'input': 0,
+            'out': 1,
         },
         'map': {
             'channels': [],
@@ -272,19 +274,21 @@ class MapConfig():
     def __init__(self, filename=None):
         """initialize config to defaults."""
         self.filename = filename
+        self.config = {}
         if self.filename is not None:
             if os.path.isfile(filename):
-                read_from_file()
+                self.read_from_file()
             else:
-                write_to_file()
+                self.config = self.default_config.copy()
+                self.write_to_file()
         else:
             self.config = self.default_config.copy()
 
-    def set_filename(filename):
+    def set_filename(self, filename):
         """set new filename."""
         self.filename = filename
 
-    def read_from_file(filename=None):
+    def read_from_file(self, filename=None):
         """read configuration from file."""
         if filename is not None:
             self.filename = filename
@@ -296,13 +300,14 @@ class MapConfig():
         self.config = self.default_config.copy()
         self.config.update(config_temp)
 
-    def write_to_file(filename=None):
+    def write_to_file(self, filename=None):
         """write configuration to file."""
         if filename is not None:
             self.filename = filename
-        if filename is not None:
+        if self.filename is not None:
+            print("\nwrite file: {}".format(self.filename))
             with open(self.filename, 'w') as f:
-                json.load(
+                json.dump(
                     self.config,
                     f,
                     sort_keys=True,
@@ -345,13 +350,19 @@ if __name__ == '__main__':
     my_mapper.start()
 
     # wait for user to hit key.
-    input()
+    try:
+        input("hit a key to stop the mapper")
+    except KeyboardInterrupt:
+        print("\nstop.")
+    except:
+        print("\nstop.")
 
     my_mapper.disconnect()
     # wait for thread to finish.
     my_mapper.join()
 
     # as last thing we save the current configuration.
+    print("\nwrite config.")
     my_config.write_to_file()
 
     # ###########################################
