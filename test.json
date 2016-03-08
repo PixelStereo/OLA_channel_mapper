@@ -1,0 +1,12 @@
+{
+    "universe": {
+        "input": 1
+    },
+    "map": {
+        "channels": [
+            0,
+            555
+        ],
+        "repeat": false
+    }
+}

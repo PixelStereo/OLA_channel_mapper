@@ -99,7 +99,7 @@ class OLAThread(threading.Thread):
         print("self.state: {}".format(self.state))
         while self.state is not OLAThread_States.standby:
             if self.state is OLAThread_States.waiting:
-                print("sate - waiting")
+                # print("state - waiting")
                 self.ola_waiting_for_connection()
             elif self.state is OLAThread_States.connected:
                 self.ola_connected()
@@ -337,13 +337,12 @@ class MapConfig():
         """
         # work on obj_1
         result = obj_1
-        # make a clean copy
+        # make copy
         # result = obj_1.copy()
         if (isinstance(result, dict) and isinstance(obj_2, dict)):
             for key in obj_2:
-                if (key in result):
-                    # result[key] = merge_deep(result[key], obj_2[key])
-                    self.merge_deep(result[key], obj_2[key])
+                if key in result:
+                    result[key] = self.merge_deep(result[key], obj_2[key])
                 else:
                     result[key] = obj_2[key]
         else:
@@ -410,6 +409,7 @@ if __name__ == '__main__':
     '''.format(filename))
 
     my_config = MapConfig(filename)
+    print("my_config.config: {}".format(my_config.config))
 
     my_mapper = Mapper(my_config.config)
 
@@ -417,7 +417,13 @@ if __name__ == '__main__':
 
     # wait for user to hit key.
     try:
-        input("hit a key to stop the mapper")
+        input(
+            "\n\n" +
+            42*'*' +
+            "\nhit a key to stop the mapper\n" +
+            42*'*' +
+            "\n\n"
+        )
     except KeyboardInterrupt:
         print("\nstop.")
     except:

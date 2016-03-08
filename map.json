@@ -12,10 +12,9 @@
             3,
             4
         ],
-        "offset": true,
+        "offset": false,
         "offset_count": 5,
-        "repeat": true,
-        "with_offset": true
+        "repeat": false
     },
     "universe": {
         "input": 1,
