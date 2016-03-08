@@ -248,6 +248,14 @@ class Mapper(OLAThread):
         # explicit call
         OLAThread.ola_connected(self)
 
+    def dmx_receive_frame(self, data):
+        """receive one dmx frame."""
+        # print(data)
+        self.map_channels(data)
+        # temp_array = array.array('B')
+        # for channel_index in range(0, self.channel_count):
+        #     temp_array.append(self.channels[channel_index])
+
     def map_channels(self, data_input):
         """remap channels according to map tabel."""
         print("map channels:")
@@ -266,14 +274,6 @@ class Mapper(OLAThread):
             data_output
         )
 
-    def dmx_receive_frame(self, data):
-        """receive one dmx frame."""
-        # print(data)
-        self.map_channels(data)
-        # temp_array = array.array('B')
-        # for channel_index in range(0, self.channel_count):
-        #     temp_array.append(self.channels[channel_index])
-
 
 class MapConfig():
     """abstract the reading / writing of configuration parameters."""
@@ -284,7 +284,7 @@ class MapConfig():
             'output': 2,
         },
         'map': {
-            'channels': [],
+            'channels': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ],
             'repeat': False,
         },
     }
@@ -302,6 +302,28 @@ class MapConfig():
         else:
             self.config = self.default_config.copy()
 
+    def merge_deep(self, obj_1, obj_2):
+        """
+        merge dicts deeply.
+
+        obj_2 overwrittes keys with same values in obj_1.
+        (if they are dicts its recusive merged.)
+        """
+        # work on obj_1
+        result = obj_1
+        # make a clean copy
+        # result = obj_1.copy()
+        if (isinstance(result, dict) and isinstance(obj_2, dict)):
+            for key in obj_2:
+                if (key in result):
+                    # result[key] = merge_deep(result[key], obj_2[key])
+                    self.merge_deep(result[key], obj_2[key])
+                else:
+                    result[key] = obj_2[key]
+        else:
+            result = obj_2
+        return result
+
     def set_filename(self, filename):
         """set new filename."""
         self.filename = filename
@@ -316,7 +338,7 @@ class MapConfig():
             f.closed
         # do a merge with the defaults.
         self.config = self.default_config.copy()
-        self.config.update(config_temp)
+        self.merge_deep(self.config, config_temp)
 
     def write_to_file(self, filename=None):
         """write configuration to file."""
