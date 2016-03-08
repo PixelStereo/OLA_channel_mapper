@@ -188,7 +188,8 @@ class OLAThread(threading.Thread):
             self.state = OLAThread_States.waiting
             print("warning: dmxSent does not Succeeded.")
         else:
-            print("send frame succeeded.")
+            # print("send frame succeeded.")
+            pass
 
     # managment functions
     def start_ola(self):
@@ -224,15 +225,13 @@ class Mapper(OLAThread):
         # print("config: {}".format(self.config))
 
         self.universe = self.config['universe']['output']
-        self.channel_count = 512
-        self.channels = {
-            # 'in': array.array('B'),
-            'out': array.array('B'),
-        }
+        # self.channel_count = 512
+        self.channel_count = 50
+        self.channels_out = array.array('B')
 
         # self.channels = []
-        # for channel_index in range(0, self.channel_count):
-        #     self.channels.append(0)
+        for channel_index in range(0, self.channel_count):
+            self.channels_out.append(0)
 
     def ola_connected(self):
         """register receive callback and switch to running mode."""
@@ -258,20 +257,44 @@ class Mapper(OLAThread):
 
     def map_channels(self, data_input):
         """remap channels according to map tabel."""
-        print("map channels:")
-        print("data_input: {}".format(data_input))
+        # print("map channels:")
+        # print("data_input: {}".format(data_input))
         data_input_length = data_input.buffer_info()[1]
-        print("data_input_length: {}".format(data_input_length))
-        print("map: {}".format(self.config['map']))
+        # print("data_input_length: {}".format(data_input_length))
+        # print("map: {}".format(self.config['map']))
+
+        map = self.config['map']
 
         data_output = array.array('B')
 
-        for channel_index in range(0, data_input_length):
-            data_output.append(data_input[channel_index])
+        # for channel_index in range(0, data_input_length):
+        #     data_output.append(data_input[channel_index])
+        channel_output_count_temp = len(map['channels'])
+        if map['repeat']:
+            channel_output_count_temp = self.channel_count
+
+        for channel_output_index in range(0, channel_output_count_temp):
+            # calculate map_index
+            map_index = channel_output_index % len(map['channels'])
+            # print("map_index: {}".format(map_index))
+
+            # get map channel
+            map_value = map['channels'][map_index]
+            if map['repeat'] and map['offset']:
+                loop_index = channel_output_index // len(map['channels'])
+                map_value = map_value + (loop_index * map['offset_count'])
+            # print("map_value: {}".format(map_value))
+
+            # check if map_value is in range of input channels
+            if map_value < data_input_length:
+                self.channels_out[channel_output_index] = data_input[map_value]
+            else:
+                # don't alter data
+                pass
 
         self.dmx_send_frame(
             self.config['universe']['output'],
-            data_output
+            self.channels_out
         )
 
 
@@ -284,8 +307,11 @@ class MapConfig():
             'output': 2,
         },
         'map': {
-            'channels': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ],
-            'repeat': False,
+            # 'channels': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ],
+            'channels': [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, ],
+            'repeat': True,
+            'offset': True,
+            'offset_count': 5,
         },
     }
 
