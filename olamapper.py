@@ -33,31 +33,11 @@ version = """08.03.2016 12:30 stefan"""
 # functions
 
 
-def get_unused_universes(state, universe_list):
-    """fill global_universe_list with unused universes."""
-    print("fill_universe_list:")
-    # print("state {}".format(state))
-    # print("universe_list {}".format(universe_list))
-    global global_universe_list
-    global global_flag_got_universes
-    for universe in universe_list:
-        # check if this universe has no input_port patched.
-        if len(universe.input_ports) == 0:
-            # if no input_port than add it to list.
-            # print("u{} input_ports: {}".format(
-            #     universe.id,
-            #     universe.input_ports
-            # ))
-            global_universe_list.append(universe.id)
-    print("global_universe_list: {}".format(global_universe_list))
-    global_flag_got_universes = True
-    wrapper.Stop()
-
 ##########################################
 # classes
 
 
-class Mapper(OLAThread):
+class OLAMapper(OLAThread):
     """Class that extends on OLAThread and implements the Mapper functions."""
 
     def __init__(self, config):
@@ -184,7 +164,7 @@ if __name__ == '__main__':
     my_config = ConfigDict(default_config, filename)
     print("my_config.config: {}".format(my_config.config))
 
-    my_mapper = Mapper(my_config.config)
+    my_mapper = OLAMapper(my_config.config)
 
     my_mapper.start_ola()
 
