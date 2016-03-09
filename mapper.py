@@ -16,10 +16,9 @@ ola channel mapper.
 
 import sys
 import os
-import time
-import json
 import array
 
+from configdict import ConfigDict
 from olathreaded import OLAThread, OLAThread_States
 
 
@@ -143,88 +142,6 @@ class Mapper(OLAThread):
         )
 
 
-class MapConfig():
-    """abstract the reading / writing of configuration parameters."""
-
-    default_config = {
-        'universe': {
-            'input': 1,
-            'output': 2,
-        },
-        'map': {
-            'channels': [0, 1, 2, 3, 4, 4, 3, 2, 1, 0, ],
-            'repeat': True,
-            'offset': True,
-            'offset_count': 5,
-        },
-    }
-
-    def __init__(self, filename=None):
-        """initialize config to defaults."""
-        self.filename = filename
-        self.config = {}
-        if self.filename is not None:
-            if os.path.isfile(filename):
-                self.read_from_file()
-            else:
-                self.config = self.default_config.copy()
-                self.write_to_file()
-        else:
-            self.config = self.default_config.copy()
-
-    def merge_deep(self, obj_1, obj_2):
-        """
-        merge dicts deeply.
-
-        obj_2 overwrittes keys with same values in obj_1.
-        (if they are dicts its recusive merged.)
-        """
-        # work on obj_1
-        result = obj_1
-        # make copy
-        # result = obj_1.copy()
-        if (isinstance(result, dict) and isinstance(obj_2, dict)):
-            for key in obj_2:
-                if key in result:
-                    result[key] = self.merge_deep(result[key], obj_2[key])
-                else:
-                    result[key] = obj_2[key]
-        else:
-            result = obj_2
-        return result
-
-    def set_filename(self, filename):
-        """set new filename."""
-        self.filename = filename
-
-    def read_from_file(self, filename=None):
-        """read configuration from file."""
-        if filename is not None:
-            self.filename = filename
-        config_temp = {}
-        with open(self.filename, 'r') as f:
-            config_temp = json.load(f)
-            f.closed
-        # do a merge with the defaults.
-        self.config = self.default_config.copy()
-        self.merge_deep(self.config, config_temp)
-
-    def write_to_file(self, filename=None):
-        """write configuration to file."""
-        if filename is not None:
-            self.filename = filename
-        if self.filename is not None:
-            print("\nwrite file: {}".format(self.filename))
-            with open(self.filename, 'w') as f:
-                json.dump(
-                    self.config,
-                    f,
-                    sort_keys=True,
-                    indent=4,
-                    separators=(',', ': ')
-                )
-                f.closed
-
 ##########################################
 if __name__ == '__main__':
 
@@ -252,7 +169,19 @@ if __name__ == '__main__':
         filename :{}
     '''.format(filename))
 
-    my_config = MapConfig(filename)
+    default_config = {
+        'universe': {
+            'input': 1,
+            'output': 2,
+        },
+        'map': {
+            'channels': [0, 1, 2, 3, 4, 4, 3, 2, 1, 0, ],
+            'repeat': True,
+            'offset': True,
+            'offset_count': 5,
+        },
+    }
+    my_config = ConfigDict(default_config, filename)
     print("my_config.config: {}".format(my_config.config))
 
     my_mapper = Mapper(my_config.config)
