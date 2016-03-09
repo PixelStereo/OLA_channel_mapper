@@ -50,7 +50,8 @@ class OLAMapper(OLAThread):
 
         self.universe = self.config['universe']['output']
         # self.channel_count = 512
-        self.channel_count = 50
+        # self.channel_count = 50
+        self.channel_count = self.config['universe']['channel_count']
         self.channels_out = array.array('B')
 
         # self.channels = []
@@ -153,6 +154,7 @@ if __name__ == '__main__':
         'universe': {
             'input': 1,
             'output': 2,
+            'channel_count': 512,
         },
         'map': {
             'channels': [0, 1, 2, 3, 4, 4, 3, 2, 1, 0, ],
