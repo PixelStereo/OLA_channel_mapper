@@ -20,9 +20,17 @@ import sys
 import os
 import time
 import json
-import configparser
+try:
+    # python3
+    from configparser import ConfigParser
+    # print("loaded python3 ConfigParser")
+except:
+    # python2
+    from ConfigParser import ConfigParser
+    # print("loaded python2 ConfigParser")
 
-version = """09.03.2016 12:00 stefan"""
+
+version = """09.03.2016 18:00 stefan"""
 
 
 ##########################################
@@ -118,49 +126,46 @@ class ConfigDict():
         """test if string is None."""
         value = None
         value_str = value_str.strip()
-        if value_str is in ["None", "none", "NONE", "Null", "NULL", "null"]:
+        if value_str in ["None", "none", "NONE", "Null", "NULL", "null"]:
             value = None
         else:
             value = value_str
-            raise TypeError("input string is not a valid list format.")
+            raise TypeError("input string is not valid None")
         return value
 
     def _try_to_interpret_string(self, value_str):
         """try to interprete string as something meaningfull."""
         value = None
         try:
-            value = json.load(value_str)
+            value = json.loads(value_str)
         except Exception as e:
-            print("value not valid json. ({})".format(e))
-        else:
+            # print("value not valid json. ({})".format(e))
             try:
-                value = self._string_to_dict(value_str)
+                value = self._convert_string_to_None(value_str)
             except Exception as e:
-                print("value not None. ({})".format(e))
+                # print("value not None. ({})".format(e))
+                value = value_str
         return value
 
     def _configparser_get_converted(self, cp, section, option):
         """get option and try to convert it to a meaningfull datatype."""
         # with this we try to convert the value to a meaningfull value..
         value = None
-        # try to read as float
         try:
-            value = cp.getfloat(section, option)
-        except Exception as e:
-            print("value not a float. ({})".format(e))
-        else:
             # try to read as int
+            value = cp.getint(section, option)
+        except Exception as e:
+            # print("value not a int. ({})".format(e))
             try:
-                value = cp.getint(section, option)
+                # try to read as float
+                value = cp.getfloat(section, option)
             except Exception as e:
-                print("value not a int. ({})".format(e))
-            else:
+                # print("value not a float. ({})".format(e))
                 # try to read as int
                 try:
                     value = cp.getboolean(section, option)
                 except Exception as e:
-                    print("value not a boolean. ({})".format(e))
-                else:
+                    # print("value not a boolean. ({})".format(e))
                     # read as string
                     value = cp.get(section, option)
                     # try to convert it to something meaningfull
@@ -170,20 +175,25 @@ class ConfigDict():
 
     def _read_from_ini_file(self, filename):
         config_temp = {}
-        cp = configparser.ConfigParser(allow_no_value=True)
+        cp = ConfigParser()
         with open(self.filename, 'r') as f:
             cp.readfp(f)
             f.closed
         # now converte ConfigParser to dict.
         for section in cp.sections():
+            # print("section: {}".format(section))
+            config_temp[section] = {}
             for option in cp.options(section):
                 # get option and add it to the dict
-                config_temp[section][option] =
-                self._configparser_get_converted(
+                # print("option: {}".format(option))
+                value = self._configparser_get_converted(
                     cp,
                     section,
                     option
                 )
+                # print("value: {}".format(value))
+                config_temp[section][option] = value
+
         return config_temp
 
     def read_from_file(self, filename=None):
@@ -219,7 +229,7 @@ class ConfigDict():
         if (
             isinstance(value, object) or
             isinstance(value, dict) or
-            isinstance(value, list) or
+            isinstance(value, list)
         ):
             value_str = json.dumps(value)
         else:
@@ -227,20 +237,26 @@ class ConfigDict():
         return value_str
 
     def _write_to_ini_file(self, filename, config):
-        print("INI FORMAT NOT IMPLEMENTED JET")
-        cp = configparser.ConfigParser(allow_no_value=True)
+        cp = ConfigParser()
         for section in config:
             # add section.
-            print(section)
+            # print("section: {}".format(section))
             cp.add_section(section)
-            for option in section:
+            for option in config[section]:
+                # print("option: {}".format(option))
+                value = None
+                if isinstance(config[section], list):
+                    # option_index = config[section].index(option)
+                    # value = config[section][option_index]
+                    value = None
+                else:
+                    value = config[section][option]
+                # print("value: {}".format(value))
                 # add option
-                print(option)
-                # cp.set(section, option, )
-                # _value_to_string(value)
-        # with open(filename, 'w') as f:
-        #     cp.write(f)
-        #     f.closed
+                cp.set(section, option, self._value_to_string(value))
+        with open(filename, 'w') as f:
+            cp.write(f)
+            f.closed
 
     def write_to_file(self, filename=None):
         """write configuration to file."""
@@ -248,7 +264,7 @@ class ConfigDict():
             self.filename = filename
         if self.filename is not None:
             # print("\nwrite file: {}".format(self.filename))
-            filename_ext = os.path.splitext(filename)[1]
+            filename_ext = os.path.splitext(self.filename)[1]
             if filename_ext is not "" and filename_ext in '.json .js':
                 self._write_to_json_file(
                     self.filename,
@@ -275,7 +291,7 @@ if __name__ == '__main__':
     arg = sys.argv[1:]
     if not arg:
         print("using standard values.")
-        print(" Allowed parameters:")
+        print(" allowed parameters:")
         print("   filename for config file       (default='test.json')")
         print("")
     else:
@@ -284,7 +300,7 @@ if __name__ == '__main__':
         #     pixel_count = int(arg[1])
     # print parsed argument values
     print('''values:
-        filename :{}
+        filename: {}
     '''.format(filename))
 
     default_config = {
@@ -296,8 +312,16 @@ if __name__ == '__main__':
             'books': [0, 1, 2, 3, 4, 4, 3, 2, 1, 0, ],
             'fun': True,
             'python': True,
-            'trees': 5,
+            'trees': {
+                'fir': 1,
+                'birch': 9,
+                'poplar': 33,
+                'maple': 11,
+                'cherry': 5,
+                'walnut': 2,
+            },
         },
+        'blubber': ['water', 'air'],
     }
     my_config = ConfigDict(default_config, filename)
     print("my_config.config: {}".format(my_config.config))
