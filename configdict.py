@@ -328,7 +328,7 @@ if __name__ == '__main__':
 
     # wait for user to hit key.
     try:
-        input(
+        raw_input(
             "\n\n" +
             42*'*' +
             "\nhit a key to stop the mapper\n" +
