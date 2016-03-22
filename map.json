@@ -56,7 +56,7 @@
         "repeat_reverse": true
     },
     "universe": {
-        "channel_count": 512,
+        "channel_count": 300,
         "input": 1,
         "output": 2
     }

@@ -120,7 +120,22 @@ class OLAMapper(OLAThread):
 
             # check if map_value is in range of input channels
             if map_value < data_input_length:
-                self.channels_out[channel_output_index] = data_input[map_value]
+                try:
+                    self.channels_out[channel_output_index] = (
+                        data_input[map_value]
+                    )
+                except Exception as e:
+                    raise
+                    print(
+                        (
+                            "additional info:\n" +
+                            "  channel_output_index: {}\n" +
+                            "  map_value: {}\n"
+                        ).format(
+                            channel_output_index,
+                            map_value
+                        )
+                    )
             else:
                 # don't alter data
                 pass
@@ -162,7 +177,7 @@ if __name__ == '__main__':
         'universe': {
             'input': 1,
             'output': 2,
-            'channel_count': 512,
+            'channel_count': 300,
         },
         'map': {
             'channels': [
