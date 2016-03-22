@@ -98,7 +98,7 @@ class OLAMapper(OLAThread):
         if map['repeat'] is True:
             channel_output_count_temp = self.channel_count
         elif isinstance(map['repeat'], int):
-            channel_output_count_temp = self.channel_count
+            channel_output_count_temp = len(map['channels']) * map['repeat']
 
         for channel_output_index in range(0, channel_output_count_temp):
             # calculate map_index
@@ -119,23 +119,28 @@ class OLAMapper(OLAThread):
             # print("map_value: {}".format(map_value))
 
             # check if map_value is in range of input channels
-            if map_value < data_input_length:
+            if (
+                (map_value < data_input_length) and
+                (map_value < data_input_length)
+            ):
                 try:
                     self.channels_out[channel_output_index] = (
                         data_input[map_value]
                     )
                 except Exception as e:
-                    raise
                     print(
                         (
                             "additional info:\n" +
                             "  channel_output_index: {}\n" +
+                            "  len(self.channels_out): {}\n" +
                             "  map_value: {}\n"
                         ).format(
                             channel_output_index,
+                            len(self.channels_out),
                             map_value
                         )
                     )
+                    raise
             else:
                 # don't alter data
                 pass
