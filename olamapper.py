@@ -63,7 +63,8 @@ class OLAMapper(OLAThread):
         self.duration = 0
         self.calls = 0
 
-    def __del__(self):
+    def print_measurements(self):
+        """print duration statistics on exit."""
         # print duration meassurements:
         print(
             (
@@ -290,6 +291,8 @@ if __name__ == '__main__':
 
     # blocks untill thread has joined.
     my_mapper.stop_ola()
+
+    my_mapper.print_measurements()
 
     # as last thing we save the current configuration.
     print("\nwrite config.")
