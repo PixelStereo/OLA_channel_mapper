@@ -109,7 +109,13 @@ class OLAMapper(OLAThread):
             map_value = map['channels'][map_index]
             if map['repeat'] and map['offset']:
                 loop_index = channel_output_index // len(map['channels'])
-                map_value = map_value + (loop_index * map['offset_count'])
+                if isinstance(map['repeat'], int) and map['repeat_reverse']:
+                    map_value = map_value + (
+                        (map['repeat'] - loop_index) *
+                        map['offset_count']
+                    )
+                else:
+                    map_value = map_value + (loop_index * map['offset_count'])
             # print("map_value: {}".format(map_value))
 
             # check if map_value is in range of input channels
