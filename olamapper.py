@@ -69,9 +69,9 @@ class OLAMapper(OLAThread):
         print(
             (
                 "map_channels:\n" +
-                "  sum duration:  {:>10}s\n" +
+                "  sum duration:  {:>10f}s\n" +
                 "  sum calls:     {:>10}\n" +
-                "  duration/call: {:>10}ms/call\n"
+                "  duration/call: {:>10f}ms/call\n"
             ).format(
                 self.duration,
                 self.calls,
