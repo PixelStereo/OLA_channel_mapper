@@ -95,7 +95,9 @@ class OLAMapper(OLAThread):
         # for channel_index in range(0, data_input_length):
         #     data_output.append(data_input[channel_index])
         channel_output_count_temp = len(map['channels'])
-        if map['repeat']:
+        if map['repeat'] is True:
+            channel_output_count_temp = self.channel_count
+        elif isinstance(map['repeat'], int):
             channel_output_count_temp = self.channel_count
 
         for channel_output_index in range(0, channel_output_count_temp):
@@ -207,7 +209,8 @@ if __name__ == '__main__':
                 0,
                 1,
             ],
-            'repeat': True,
+            'repeat': 5,
+            'repeat_reverse': True,
             'offset': True,
             'offset_count': 32,
         },

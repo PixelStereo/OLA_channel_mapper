@@ -52,7 +52,8 @@
         ],
         "offset": true,
         "offset_count": 32,
-        "repeat": true
+        "repeat": 5,
+        "repeat_reverse": true
     },
     "universe": {
         "channel_count": 512,
