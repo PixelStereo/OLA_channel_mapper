@@ -209,7 +209,7 @@ if __name__ == '__main__':
             ],
             'repeat': True,
             'offset': True,
-            'offset_count': 48,
+            'offset_count': 32,
         },
     }
     my_config = ConfigDict(default_config, filename)
