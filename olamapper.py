@@ -111,7 +111,7 @@ class OLAMapper(OLAThread):
                 loop_index = channel_output_index // len(map['channels'])
                 if isinstance(map['repeat'], int) and map['repeat_reverse']:
                     map_value = map_value + (
-                        (map['repeat'] - loop_index) *
+                        ((map['repeat']-1) - loop_index) *
                         map['offset_count']
                     )
                 else:
