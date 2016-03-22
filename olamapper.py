@@ -15,6 +15,7 @@ ola channel mapper.
 
 
 import sys
+import time
 import os
 import array
 
@@ -58,6 +59,25 @@ class OLAMapper(OLAThread):
         for channel_index in range(0, self.channel_count):
             self.channels_out.append(0)
 
+        # timing things
+        self.duration = 0
+        self.calls = 0
+
+    def __del__(self):
+        # print duration meassurements:
+        print(
+            (
+                "map_channels:\n" +
+                "  sum duration:  {:>10}s\n" +
+                "  sum calls:     {:>10}\n" +
+                "  duration/call: {:>10}ms/call\n"
+            ).format(
+                self.duration,
+                self.calls,
+                ((self.duration / self.calls) / 1000)
+            )
+        )
+
     def ola_connected(self):
         """register receive callback and switch to running mode."""
         self.client.RegisterUniverse(
@@ -75,7 +95,13 @@ class OLAMapper(OLAThread):
     def dmx_receive_frame(self, data):
         """receive one dmx frame."""
         # print(data)
+        # meassure duration:
+        start = time.time()
         self.map_channels(data)
+        stop = time.time()
+        duration = stop - start
+        self.duration += duration
+        self.calls += 1
         # temp_array = array.array('B')
         # for channel_index in range(0, self.channel_count):
         #     temp_array.append(self.channels[channel_index])
