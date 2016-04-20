@@ -158,11 +158,11 @@ class OLAMapper(OLAThread):
         # print("data_input_length: {}".format(data_input_length))
         # print("map: {}".format(self.config['map']))
 
-        for channel_output_index, map_value in self.map.items():
+        for channel_output_index, map_value in enumerate(self.map):
 
             # check if map_value is in range of input channels
             if (
-                (map_value < data_input_length) and
+                # (map_value < data_input_length) and
                 (map_value < data_input_length)
             ):
                 try:
