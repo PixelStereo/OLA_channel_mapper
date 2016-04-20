@@ -55,6 +55,11 @@ class OLAMapper(OLAThread):
         self.channel_count = self.config['universe']['channel_count']
         self.channels_out = array.array('B')
 
+        # internal map
+        self.map = []
+        self.create_map()
+        print("full map: {}".format(self.map))
+
         # self.channels = []
         for channel_index in range(0, self.channel_count):
             self.channels_out.append(0)
@@ -107,6 +112,44 @@ class OLAMapper(OLAThread):
         # for channel_index in range(0, self.channel_count):
         #     temp_array.append(self.channels[channel_index])
 
+    def create_map(self):
+        """create map based on configuration."""
+        # self.map
+        map_config = self.config['map']
+
+        data_output = array.array('B')
+
+        # for channel_index in range(0, data_input_length):
+        #     data_output.append(data_input[channel_index])
+        channel_output_count_temp = len(map_config['channels'])
+        if map_config['repeat'] is True:
+            channel_output_count_temp = self.channel_count
+        elif isinstance(map_config['repeat'], int):
+            channel_output_count_temp = (
+                len(map_config['channels']) * map_config['repeat']
+            )
+
+        for channel_output_index in range(0, channel_output_count_temp):
+            # calculate map_index
+            map_index = channel_output_index % len(map_config['channels'])
+            # print("map_index: {}".format(map_index))
+
+            # get map_config channel
+            map_value = map_config['channels'][map_index]
+            if map_config['repeat'] and map_config['offset']:
+                loop_index = channel_output_index // len(map_config['channels'])
+                if isinstance(map_config['repeat'], int) and map_config['repeat_reverse']:
+                    map_value = map_value + (
+                        ((map_config['repeat']-1) - loop_index) *
+                        map_config['offset_count']
+                    )
+                else:
+                    map_value = map_value + (loop_index * map_config['offset_count'])
+            # print("map_value: {}".format(map_value))
+
+            # add channel to map
+            self.map.append(map_value)
+
     def map_channels(self, data_input):
         """remap channels according to map tabel."""
         # print("map channels:")
@@ -115,35 +158,7 @@ class OLAMapper(OLAThread):
         # print("data_input_length: {}".format(data_input_length))
         # print("map: {}".format(self.config['map']))
 
-        map = self.config['map']
-
-        data_output = array.array('B')
-
-        # for channel_index in range(0, data_input_length):
-        #     data_output.append(data_input[channel_index])
-        channel_output_count_temp = len(map['channels'])
-        if map['repeat'] is True:
-            channel_output_count_temp = self.channel_count
-        elif isinstance(map['repeat'], int):
-            channel_output_count_temp = len(map['channels']) * map['repeat']
-
-        for channel_output_index in range(0, channel_output_count_temp):
-            # calculate map_index
-            map_index = channel_output_index % len(map['channels'])
-            # print("map_index: {}".format(map_index))
-
-            # get map channel
-            map_value = map['channels'][map_index]
-            if map['repeat'] and map['offset']:
-                loop_index = channel_output_index // len(map['channels'])
-                if isinstance(map['repeat'], int) and map['repeat_reverse']:
-                    map_value = map_value + (
-                        ((map['repeat']-1) - loop_index) *
-                        map['offset_count']
-                    )
-                else:
-                    map_value = map_value + (loop_index * map['offset_count'])
-            # print("map_value: {}".format(map_value))
+        for channel_output_index, map_value in self.map.items():
 
             # check if map_value is in range of input channels
             if (
