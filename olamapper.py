@@ -18,6 +18,7 @@ import sys
 import time
 import os
 import array
+import json
 
 from configdict import ConfigDict
 from olathreaded import OLAThread, OLAThread_States
@@ -57,8 +58,8 @@ class OLAMapper(OLAThread):
 
         # internal map
         self.map = []
-        self.create_map()
-        print("full map: {}".format(self.map))
+        self.map_create()
+        # print("full map: {}".format(map_tostring_pretty()))
 
         # self.channels = []
         for channel_index in range(0, self.channel_count):
@@ -113,7 +114,7 @@ class OLAMapper(OLAThread):
         # for channel_index in range(0, self.channel_count):
         #     temp_array.append(self.channels[channel_index])
 
-    def create_map(self):
+    def map_create(self):
         """create map based on configuration."""
         # self.map
         map_config = self.config['map']
@@ -139,18 +140,60 @@ class OLAMapper(OLAThread):
             map_value = map_config['channels'][map_index]
             if map_value is not -1:
                 if map_config['repeat'] and map_config['offset']:
-                    loop_index = channel_output_index // len(map_config['channels'])
-                    if isinstance(map_config['repeat'], int) and map_config['repeat_reverse']:
+                    loop_index = (
+                        channel_output_index // len(map_config['channels'])
+                    )
+                    if (
+                        isinstance(map_config['repeat'], int) and
+                        map_config['repeat_reverse']
+                    ):
                         map_value = map_value + (
                             ((map_config['repeat']-1) - loop_index) *
                             map_config['offset_count']
                         )
                     else:
-                        map_value = map_value + (loop_index * map_config['offset_count'])
+                        map_value = (
+                            map_value +
+                            (loop_index * map_config['offset_count'])
+                        )
             # print("map_value: {}".format(map_value))
 
             # add channel to map
             self.map.append(map_value)
+
+    def map_tostring_pretty(self):
+        """print map content in pretty way."""
+        output = ""
+        map_config = self.config['map']
+        if isinstance(map_config['offset_count'], int):
+            array = ""
+            separator_line = "\n  "
+            array += separator_line
+            for index, value in enumerate(self.map):
+                if (index is len(self.map)-1):
+                    array += "{: >3}".format(value)
+                else:
+                    array += "{: >3}, ".format(value)
+                # after every repeat break line
+                if (
+                    (((index+1) % map_config['offset_count']) == 0) and
+                    not (index+1 is len(self.map))
+                ):
+                    # print("index: {}".format(index))
+                    array += separator_line
+            output = "[{}\n]".format(array)
+        else:
+            # print(output)
+            output = json.dumps(
+                self.map,
+                sort_keys=True,
+                indent=4,
+                separators=(',', ': ')
+            )
+        # [ array, content ]
+
+        # print("map: {}".format(output))
+        return output
 
     def map_channels(self, data_input):
         """remap channels according to map tabel."""
@@ -226,7 +269,7 @@ if __name__ == '__main__':
         'universe': {
             'input': 1,
             'output': 2,
-            'channel_count': 300,
+            'channel_count': 240,
         },
         'map': {
             'channels': [
@@ -282,13 +325,14 @@ if __name__ == '__main__':
             'repeat': 5,
             'repeat_reverse': True,
             'offset': True,
-            'offset_count': 32,
+            'offset_count': 48,
         },
     }
     my_config = ConfigDict(default_config, filename)
     print("my_config.config: {}".format(my_config.config))
 
     my_mapper = OLAMapper(my_config.config)
+    print("full map:\n{}".format(my_mapper.map_tostring_pretty()))
 
     my_mapper.start_ola()
 

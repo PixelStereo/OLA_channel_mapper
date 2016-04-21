@@ -51,12 +51,12 @@
             1
         ],
         "offset": true,
-        "offset_count": 32,
+        "offset_count": 48,
         "repeat": 5,
         "repeat_reverse": true
     },
     "universe": {
-        "channel_count": 300,
+        "channel_count": 240,
         "input": 1,
         "output": 2
     }
