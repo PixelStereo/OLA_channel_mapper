@@ -71,18 +71,19 @@ class OLAMapper(OLAThread):
     def print_measurements(self):
         """print duration statistics on exit."""
         # print duration meassurements:
-        print(
-            (
-                "map_channels:\n" +
-                "  sum duration:  {:>10f}s\n" +
-                "  sum calls:     {:>10}\n" +
-                "  duration/call: {:>10.2f}ms/call\n"
-            ).format(
-                self.duration,
-                self.calls,
-                ((self.duration / self.calls)*1000)
+        if self.calls > 0:
+            print(
+                (
+                    "map_channels:\n" +
+                    "  sum duration:  {:>10f}s\n" +
+                    "  sum calls:     {:>10}\n" +
+                    "  duration/call: {:>10.2f}ms/call\n"
+                ).format(
+                    self.duration,
+                    self.calls,
+                    ((self.duration / self.calls)*1000)
+                )
             )
-        )
 
     def ola_connected(self):
         """register receive callback and switch to running mode."""
@@ -136,15 +137,16 @@ class OLAMapper(OLAThread):
 
             # get map_config channel
             map_value = map_config['channels'][map_index]
-            if map_config['repeat'] and map_config['offset']:
-                loop_index = channel_output_index // len(map_config['channels'])
-                if isinstance(map_config['repeat'], int) and map_config['repeat_reverse']:
-                    map_value = map_value + (
-                        ((map_config['repeat']-1) - loop_index) *
-                        map_config['offset_count']
-                    )
-                else:
-                    map_value = map_value + (loop_index * map_config['offset_count'])
+            if map_value is not -1:
+                if map_config['repeat'] and map_config['offset']:
+                    loop_index = channel_output_index // len(map_config['channels'])
+                    if isinstance(map_config['repeat'], int) and map_config['repeat_reverse']:
+                        map_value = map_value + (
+                            ((map_config['repeat']-1) - loop_index) *
+                            map_config['offset_count']
+                        )
+                    else:
+                        map_value = map_value + (loop_index * map_config['offset_count'])
             # print("map_value: {}".format(map_value))
 
             # add channel to map
